@@ -8,12 +8,12 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:transparent;--surface:#fffcf7;--ink:#1a1208;--ink2:#6b5e45;
+  --bg:#f4efe6;--surface:#fffcf7;--ink:#1a1208;--ink2:#6b5e45;
   --accent:#f07020;--border:#e0d5c0;--radius:16px;
 }
 html,body{min-height:100vh;background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--ink);}
 body{display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 80px;}
-.card{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:32px 24px 28px;box-shadow:0 2px 20px rgba(30,18,0,.07);}
+.card{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:32px 24px 28px;box-shadow:0 2px 20px rgba(30,18,0,.07);}
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
 .headline{font-family:'DM Serif Display',serif;font-size:26px;line-height:1.15;margin-bottom:4px;}
 .sub{font-size:13px;color:var(--ink2);margin-bottom:24px;line-height:1.5;}
@@ -64,7 +64,7 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
   </div>
 
   <div class="input-wrap">
-    <input id="q" class="field" type="text" placeholder="Ex : rue de la Paix, Paris…" autocomplete="off" spellcheck="false">
+    <input id="q" class="field" type="text" placeholder="Ex: rue Edouard Jenner, Angers…" autocomplete="off" spellcheck="false">
     <button class="clear-btn" id="clearBtn">×</button>
   </div>
 
@@ -92,7 +92,7 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
     <div class="note">Source : Base Adresse Nationale (données officielles). Certaines adresses peuvent manquer si la mairie n'a pas encore tout saisi.</div>
   </div>
 
-  <footer>Base Adresse Nationale · BD TOPO IGN · Créé par Prospéo</footer>
+  <footer>Base Adresse Nationale · BD TOPO IGN · Sans clé API</footer>
 </div>
 
 <script>
@@ -123,24 +123,16 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
     resRue.textContent = label;
     resNum.textContent = count;
 
-    // Verdict porte-à-porte
+    // Verdict provisoire — sera mis à jour par detectBati
     verdict.className = 'verdict';
     if(count === 0){
       verdict.classList.add('nogo');
       verdictIcon.textContent = '⚠️';
       verdictTxt.textContent = 'Aucune adresse trouvée — rue peut-être absente de la BAN.';
-    } else if(count < 10){
-      verdict.classList.add('maybe');
-      verdictIcon.textContent = '🤔';
-      verdictTxt.textContent = 'Petite rue — ' + count + ' portes.';
-    } else if(count < 30){
-      verdict.classList.add('go');
-      verdictIcon.textContent = '✅';
-      verdictTxt.textContent = 'Bonne rue — ' + count + ' portes.';
     } else {
-      verdict.classList.add('go');
-      verdictIcon.textContent = '🔥';
-      verdictTxt.textContent = 'Grande rue — ' + count + ' portes.';
+      verdict.classList.add('maybe');
+      verdictIcon.textContent = '⏳';
+      verdictTxt.textContent = 'Analyse du type de bâti en cours…';
     }
 
     resultEl.classList.add('show');
@@ -250,6 +242,22 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
     const pIndiv = Math.round(individuel/total*100);
     const pColl  = Math.round(collectif/total*100);
     const pEntr  = Math.round(entreprise/total*100);
+
+    // Verdict basé sur % maisons individuelles
+    verdict.className = 'verdict';
+    if(pIndiv < 50){
+      verdict.classList.add('nogo');
+      verdictIcon.textContent = '🚫';
+      verdictTxt.textContent = 'Rue peu adaptée — seulement ' + pIndiv + '% de maisons individuelles.';
+    } else if(pIndiv < 75){
+      verdict.classList.add('maybe');
+      verdictIcon.textContent = '👍';
+      verdictTxt.textContent = 'Rue optimale — ' + pIndiv + '% de maisons individuelles.';
+    } else {
+      verdict.classList.add('go');
+      verdictIcon.textContent = '🏆';
+      verdictTxt.textContent = 'Rue parfaite — ' + pIndiv + '% de maisons individuelles !';
+    }
 
     batiEl.style.display = "block";
     batiEl.className = "bati";
