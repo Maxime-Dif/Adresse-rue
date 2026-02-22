@@ -123,14 +123,12 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
     resRue.textContent = label;
     resNum.textContent = count;
 
-    // Verdict provisoire — sera mis à jour par detectBati
-    verdict.className = 'verdict';
     if(count === 0){
-      verdict.classList.add('nogo');
+      verdict.className = 'verdict nogo';
       verdictIcon.textContent = '⚠️';
       verdictTxt.textContent = 'Aucune adresse trouvée — rue peut-être absente de la BAN.';
     } else {
-      verdict.classList.add('maybe');
+      verdict.className = 'verdict maybe';
       verdictIcon.textContent = '⏳';
       verdictTxt.textContent = 'Analyse du type de bâti en cours…';
     }
@@ -197,7 +195,20 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
       + "&TYPENAMES=BDTOPO_V3:batiment&BBOX=" + bbox + ",EPSG:4326"
       + "&outputFormat=application/json&count=500";
 
-    const r = await fetch(wfsUrl);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    let r;
+    try {
+      r = await fetch(wfsUrl, {signal: controller.signal});
+      clearTimeout(timeout);
+    } catch(e) {
+      clearTimeout(timeout);
+      // IGN ne répond pas — verdict impossible
+      verdict.className = 'verdict maybe';
+      verdictIcon.textContent = '🤔';
+      verdictTxt.textContent = 'Analyse du bâti indisponible sur cette rue.';
+      return;
+    }
     if(!r.ok) return;
     const j = await r.json();
     const feats = j.features || [];
@@ -222,7 +233,13 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
       return coords.some(c => dist(c[0],c[1],blon,blat) < 60);
     });
 
-    if(proches.length === 0){ batiEl.style.display="none"; return; }
+    if(proches.length === 0){
+      batiEl.style.display="none";
+      verdict.className = 'verdict maybe';
+      verdictIcon.textContent = '🤔';
+      verdictTxt.textContent = "Impossible d'analyser le bâti sur cette rue.";
+      return;
+    }
 
     let individuel = 0, collectif = 0, entreprise = 0;
     proches.forEach(bat => {
@@ -234,11 +251,16 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
       } else if(u.includes("commercial") || u.includes("industriel")){
         entreprise++;
       }
-      // Indifférencié / Annexe sans logements → ignoré
     });
 
     const total  = individuel + collectif + entreprise;
-    if(total === 0){ batiEl.style.display="none"; return; }
+    if(total === 0){
+      batiEl.style.display="none";
+      verdict.className = 'verdict maybe';
+      verdictIcon.textContent = '🤔';
+      verdictTxt.textContent = "Impossible d'analyser le bâti sur cette rue.";
+      return;
+    }
     const pIndiv = Math.round(individuel/total*100);
     const pColl  = Math.round(collectif/total*100);
     const pEntr  = Math.round(entreprise/total*100);
@@ -301,11 +323,15 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
           const lat = f.geometry?.coordinates?.[1];
           // 1) CSV d'abord pour avoir count + coords
           const {count, coords} = await getStreetData(p);
-          // 2) WFS en parallèle avec rien d'autre à faire
-          await detectBati(coords, lon, lat).catch(()=>{});
-          // 3) Tout est prêt, on affiche d'un coup
+          // 2) Affiche le résultat avec verdict ⏳
           setStatus("");
           showResult(label, count, p.citycode, p.city, p.postcode);
+          // 3) WFS met à jour le verdict une fois terminé
+          await detectBati(coords, lon, lat).catch(()=>{
+            verdict.className = 'verdict maybe';
+            verdictIcon.textContent = '🤔';
+            verdictTxt.textContent = "Impossible d'analyser le bâti — données IGN indisponibles.";
+          });
         } catch(e){
           setStatus("Erreur : " + e.message);
         }
