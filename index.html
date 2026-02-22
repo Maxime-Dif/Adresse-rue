@@ -64,7 +64,7 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
   </div>
 
   <div class="input-wrap">
-    <input id="q" class="field" type="text" placeholder="Ex: rue Edouard Jenner, Angers…" autocomplete="off" spellcheck="false">
+    <input id="q" class="field" type="text" placeholder="Ex: rue de la Paix, Paris…" autocomplete="off" spellcheck="false">
     <button class="clear-btn" id="clearBtn">×</button>
   </div>
 
@@ -92,7 +92,7 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
     <div class="note">Source : Base Adresse Nationale (données officielles). Certaines adresses peuvent manquer si la mairie n'a pas encore tout saisi.</div>
   </div>
 
-  <footer>Base Adresse Nationale · BD TOPO IGN · Sans clé API</footer>
+  <footer>Base Adresse Nationale · BD TOPO IGN · Créé par Prospéo</footer>
 </div>
 
 <script>
@@ -132,15 +132,15 @@ footer{font-size:11px;color:#b5a98a;text-align:center;margin-top:20px;line-heigh
     } else if(count < 10){
       verdict.classList.add('maybe');
       verdictIcon.textContent = '🤔';
-      verdictTxt.textContent = 'Petite rue — ' + count + ' portes maximum.';
+      verdictTxt.textContent = 'Petite rue — ' + count + ' portes.';
     } else if(count < 30){
       verdict.classList.add('go');
       verdictIcon.textContent = '✅';
-      verdictTxt.textContent = 'Bonne rue — ' + count + ' portes, rentable en porte-à-porte.';
+      verdictTxt.textContent = 'Bonne rue — ' + count + ' portes.';
     } else {
       verdict.classList.add('go');
       verdictIcon.textContent = '🔥';
-      verdictTxt.textContent = 'Grande rue — ' + count + ' portes, très intéressante !';
+      verdictTxt.textContent = 'Grande rue — ' + count + ' portes.';
     }
 
     resultEl.classList.add('show');
